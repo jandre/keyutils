@@ -42,6 +42,7 @@ func main() {
 	}
 
 	log.Println("Read:", val)
+}
 ```
 
 ```bash
