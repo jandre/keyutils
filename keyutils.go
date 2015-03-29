@@ -163,8 +163,11 @@ func Clear(keyring KeySerial) error {
 //
 // Chown wraps keyctl_chown(3) to change ownership of the key.
 //
-func Chown(key KeySerial, uid C.uid_t, gid C.gid_t) error {
-	_, err := C.keyctl_chown(C.key_serial_t(key), uid, gid)
+// See: http://man7.org/linux/man-pages/man3/keyctl_chown.3.html
+//
+func Chown(key KeySerial, uid uint, gid uint) error {
+
+	_, err := C.keyctl_chown(C.key_serial_t(key), C.uid_t(uid), C.gid_t(gid))
 
 	if err != nil {
 		return err.(syscall.Errno)
@@ -175,7 +178,7 @@ func Chown(key KeySerial, uid C.uid_t, gid C.gid_t) error {
 //
 // Revoke() will call keyctl_revoke(3) to revoke a key.
 //
-// See:
+// See: http://man7.org/linux/man-pages/man3/keyctl_revoke.3.html
 //
 func Revoke(key KeySerial) error {
 	_, err := C.keyctl_revoke(C.key_serial_t(key))

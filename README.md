@@ -51,4 +51,4 @@ $ go run example/main.go
 ```
 
 # TODO
-Many of the `keyctl_*` apis are not yet supported.
+Many of the `keyctl_*` apis are not yet supported.  Please read keyutils.go to see what APIs have been wrapped.
