@@ -3,7 +3,7 @@
 Go bindings for Linux's libkeyutils. libkeyutils provides an interface to the Linux kernel's 
 keyring APIs, useful for storing secrets.
 
-It requires headers and libs for libkeyutils to be installed, e.g. apt-get install libkeyutils-dev.
+It requires headers and libs for libkeyutils to be installed, e.g. `apt-get install libkeyutils-dev`.
 
 # How to build and install
 
@@ -14,7 +14,7 @@ go get github.com/jandre/keyutils
 
 # How to use
 
-See example/main.go to see an example of adding and reading a 
+See `example/main.go` to see an example of adding and reading a 
 key from the user keyring.
 
 ```go
