@@ -49,9 +49,35 @@ func TestClearKey(t *testing.T) {
 		t.Fatal(err)
 	}
 	result, err := RequestKey(USER, "testkey", KEY_SPEC_USER_KEYRING)
-	t.Log("read key is", result)
+	t.Log("Clear() read key is", result)
 	if result != 0 {
-		t.Fatal("mismatched key", result)
+		t.Fatal("found a key that should have been cleared", result)
+	}
+
+}
+
+func TestDescribeKey(t *testing.T) {
+
+	k, err := AddKey(USER, "testkey", "hello this is new data", KEY_SPEC_USER_KEYRING)
+	t.Log("key is", k)
+
+	if err != nil {
+		t.Fatal("error adding key", err)
+	}
+	result, err := DescribeKey(k)
+
+	if err != nil {
+		t.Fatal("error describing key", err)
+	}
+
+	if result == nil {
+		t.Fatal("expected a result from DescribeKey, and got nothing")
+	}
+
+	t.Log("result is", result)
+
+	if result.Description != "testkey" {
+		t.Fatal("bad result", result)
 	}
 
 }

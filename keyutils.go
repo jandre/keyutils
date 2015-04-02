@@ -17,6 +17,9 @@ package keyutils
 */
 import "C"
 import (
+	"errors"
+	"strconv"
+	"strings"
 	"syscall"
 	"unsafe"
 )
@@ -24,6 +27,15 @@ import (
 type KeySerial int
 type KeyType string
 type KeyPerm int
+
+type KeyDesc struct {
+	Serial      KeySerial
+	Type        KeyType
+	Uid         uint
+	Gid         uint
+	Permissions uint
+	Description string
+}
 
 const (
 	USER    KeyType = "user"
@@ -119,7 +131,7 @@ func AddKey(keyType KeyType, desc string, data string, keyring KeySerial) (KeySe
 }
 
 //
-// ReadKey() reads a key with the given serial # using keyctl_read_alloc(3), and returns the bytes read.
+// ReadKeyBytes() reads a key with the given serial # using keyctl_read_alloc(3), and returns the bytes read.
 //
 func ReadKeyBytes(key KeySerial) ([]byte, error) {
 
@@ -130,6 +142,45 @@ func ReadKeyBytes(key KeySerial) ([]byte, error) {
 		result := C.GoBytes(ptr, bytes)
 		C.free(ptr)
 		return result, nil
+	}
+
+	return nil, err.(syscall.Errno)
+}
+
+func parseKeyDesc(keySerial KeySerial, keyDesc string) (*KeyDesc, error) {
+	// description is type;uid;gid;permMask;desc
+	tokens := strings.SplitN(keyDesc, ";", 5)
+
+	if len(tokens) < 5 {
+		return nil, errors.New("malformed key desc string, not enough tokens: " + keyDesc)
+	}
+
+	uid, _ := strconv.Atoi(tokens[1])
+	gid, _ := strconv.Atoi(tokens[2])
+	permissions, _ := strconv.ParseUint(tokens[3], 16, 32)
+	desc := tokens[4]
+
+	return &KeyDesc{
+		Serial:      keySerial,
+		Type:        KeyType(tokens[0]),
+		Uid:         uint(uid),
+		Gid:         uint(gid),
+		Permissions: uint(permissions),
+		Description: desc,
+	}, nil
+}
+
+//
+// DescribeKey() wraps keyctl_describe_alloc() to describe a key
+//
+func DescribeKey(key KeySerial) (*KeyDesc, error) {
+	var ptr *C.char = nil
+	bytes, err := C.keyctl_describe_alloc(C.key_serial_t(int(key)), (&ptr))
+
+	if err == nil && bytes > 0 && ptr != nil {
+		descString := C.GoString(ptr)
+		C.free(unsafe.Pointer(ptr))
+		return parseKeyDesc(key, descString)
 	}
 
 	return nil, err.(syscall.Errno)
