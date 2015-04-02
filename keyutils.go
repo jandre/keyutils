@@ -17,6 +17,8 @@ package keyutils
 */
 import "C"
 import (
+	"bytes"
+	"encoding/binary"
 	"errors"
 	"strconv"
 	"strings"
@@ -24,7 +26,7 @@ import (
 	"unsafe"
 )
 
-type KeySerial int
+type KeySerial int32
 type KeyType string
 type KeyPerm int
 
@@ -111,7 +113,14 @@ func RequestKey(keyType KeyType, desc string, keyring KeySerial) (KeySerial, err
 //
 func AddKeyBytes(keyType KeyType, desc string, data []byte, keyring KeySerial) (KeySerial, error) {
 	payloadLen := C.size_t(len(data))
-	result, err := C.add_key(C.CString(string(keyType)), C.CString(desc), unsafe.Pointer(&data[0]), payloadLen, C.key_serial_t(int(keyring)))
+
+	var secret unsafe.Pointer
+
+	if data != nil {
+		secret = unsafe.Pointer(&data[0])
+	}
+
+	result, err := C.add_key(C.CString(string(keyType)), C.CString(desc), secret, payloadLen, C.key_serial_t(int(keyring)))
 
 	if err != nil {
 		return 0, err.(syscall.Errno)
@@ -187,7 +196,8 @@ func DescribeKey(key KeySerial) (*KeyDesc, error) {
 }
 
 //
-// ReadKey() is a wrapper for ReadKeyBytes() that reads a key with the given serial #, and convert to a string value.
+// ReadKey() is a wrapper for ReadKeyBytes() that reads a key with the given serial #, and converts
+// whatever is in the output buffer to a string value.
 //
 func ReadKey(key KeySerial) (string, error) {
 	bytes, err := ReadKeyBytes(key)
@@ -269,4 +279,62 @@ func SetPerm(key KeySerial, mask KeyPerm) error {
 		return err.(syscall.Errno)
 	}
 	return nil
+}
+
+//
+// NewKeyRing() creates a keyring with description `desc`
+// under the parent keyring `parentRing`
+//
+func NewKeyRing(desc string, parentRing KeySerial) (KeySerial, error) {
+	return AddKeyBytes(KEYRING, desc, nil, parentRing)
+}
+
+//
+// ListKeysInKeyRing() will list  all keys in keyring, returning a
+// `KeyDesc` for each.
+//
+func ListKeysInKeyRing(keyring KeySerial) ([]*KeyDesc, error) {
+
+	desc, err := DescribeKey(keyring)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if desc == nil || desc.Type != KEYRING {
+		// it's not a keyring, so makes no sense to list the keys inside of it..
+		return nil, errors.New("not a valid keyring: " + string(keyring))
+	}
+
+	keyBytes, err := ReadKeyBytes(keyring)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(keyBytes)%4 != 0 {
+		return nil, errors.New("Expected a string of key_serial_t")
+	}
+
+	keys := make([]*KeyDesc, 0)
+
+	for c := 0; c < len(keyBytes); c += 4 {
+		var key int32
+		buf := bytes.NewBuffer(keyBytes[c:(c + 4)])
+		err = binary.Read(buf, binary.LittleEndian, &key)
+		if err != nil {
+			return nil, err
+		}
+
+		desc, err := DescribeKey(KeySerial(key))
+
+		if err != nil {
+			return nil, err
+		}
+
+		keys = append(keys, desc)
+	}
+
+	return keys, nil
+
 }
