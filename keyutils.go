@@ -147,13 +147,16 @@ func ReadKeyBytes(key KeySerial) ([]byte, error) {
 	var ptr unsafe.Pointer = nil
 	bytes, err := C.keyctl_read_alloc(C.key_serial_t(int(key)), (*unsafe.Pointer)(&ptr))
 
-	if err == nil && bytes > 0 && ptr != nil {
+	if err != nil {
+		return nil, err.(syscall.Errno)
+	}
+	if bytes > 0 && ptr != nil {
 		result := C.GoBytes(ptr, bytes)
 		C.free(ptr)
 		return result, nil
 	}
+	return nil, nil
 
-	return nil, err.(syscall.Errno)
 }
 
 func parseKeyDesc(keySerial KeySerial, keyDesc string) (*KeyDesc, error) {
