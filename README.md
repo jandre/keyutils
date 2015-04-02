@@ -19,6 +19,8 @@ go get github.com/jandre/keyutils
 See `example/add_and_read_key.go` to see an example of adding and reading a 
 key from the user keyring.
 
+For other examples, please see `example/`.
+
 ```go
 package main
 
