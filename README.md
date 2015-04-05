@@ -1,5 +1,7 @@
 # What is this?
 
+[![GoDoc](https://godoc.org/github.com/jandre/keyutils?status.svg)](http://godoc.org/github.com/jandre/keyutils)
+
 Go bindings for Linux's libkeyutils. libkeyutils provides an interface to the Linux kernel's 
 keyring APIs, useful for storing secrets.
 
