@@ -52,6 +52,11 @@ $ go run example/main.go
 2015/03/29 17:20:36 Added key test123 with serial: 222717072
 2015/03/29 17:20:36 Read: hello
 ```
+# Documentation
+
+See [godoc](http://godoc.org/github.com/jandre/keyutils)
 
 # TODO
 Many of the `keyctl_*` apis are not yet supported.  Please read keyutils.go to see what APIs have been wrapped.
+
+
