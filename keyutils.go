@@ -93,12 +93,15 @@ const (
 // and description = `desc` in the keyring `keyring`.
 //
 func RequestKey(keyType KeyType, desc string, keyring KeySerial) (KeySerial, error) {
+	cKeyType := C.CString(string(keyType))
+	cDesc := C.CString(desc)
 	result, err := C.request_key(
-		C.CString(string(keyType)),
-		C.CString(desc),
+		cKeyType,
+		cDesc,
 		nil,
 		C.key_serial_t(int(keyring)))
-
+	C.free(unsafe.Pointer(cKeyType))
+	C.free(unsafe.Pointer(cDesc))
 	if err != nil {
 		return 0, err.(syscall.Errno)
 	} else {
@@ -112,6 +115,8 @@ func RequestKey(keyType KeyType, desc string, keyring KeySerial) (KeySerial, err
 // It returns the serial number of the added key.
 //
 func AddKeyBytes(keyType KeyType, desc string, data []byte, keyring KeySerial) (KeySerial, error) {
+	cKeyType := C.CString(string(keyType))
+	cDesc := C.CString(desc)
 	payloadLen := C.size_t(len(data))
 
 	var secret unsafe.Pointer
@@ -120,7 +125,10 @@ func AddKeyBytes(keyType KeyType, desc string, data []byte, keyring KeySerial) (
 		secret = unsafe.Pointer(&data[0])
 	}
 
-	result, err := C.add_key(C.CString(string(keyType)), C.CString(desc), secret, payloadLen, C.key_serial_t(int(keyring)))
+	result, err := C.add_key(cKeyType, cDesc, secret, payloadLen, C.key_serial_t(int(keyring)))
+
+	C.free(unsafe.Pointer(cKeyType))
+	C.free(unsafe.Pointer(cDesc))
 
 	if err != nil {
 		return 0, err.(syscall.Errno)
