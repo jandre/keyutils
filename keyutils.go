@@ -349,3 +349,29 @@ func ListKeysInKeyRing(keyring KeySerial) ([]*KeyDesc, error) {
 	return keys, nil
 
 }
+
+//
+// Link wraps keyctl_link(3).
+//
+func Link(key KeySerial, keyRing KeySerial) error {
+
+	_, err := C.keyctl_link(C.key_serial_t(key), C.key_serial_t(keyRing))
+
+	if err != nil {
+		return err.(syscall.Errno)
+	}
+	return nil
+}
+
+//
+// Unlink wraps keyctl_unlink(3).
+//
+func Unlink(key KeySerial, keyRing KeySerial) error {
+
+	_, err := C.keyctl_unlink(C.key_serial_t(key), C.key_serial_t(keyRing))
+
+	if err != nil {
+		return err.(syscall.Errno)
+	}
+	return nil
+}
